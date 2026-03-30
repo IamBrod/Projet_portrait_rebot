@@ -17,6 +17,7 @@ ROUGE_BOUTON     = "#4169E1"   # bleu roi pour les boutons principaux
 
 
 #DONNÉES
+
 CARACTERISTIQUES = {
     "Hair Color 💇":  ['Brown', 'Blond', 'Black', 'Gray'],
     "Hair Type ✂️":   ['Wavy', 'Straight', 'Receding Hairline', 'Bangs', 'Bald'],
@@ -77,35 +78,25 @@ class PortraitRobotApp:
         self.root = root
         self.root.title("Portrait Robot")
         self.root.geometry("1100x700")
-
         self.photos          = []
         self.portrait_labels = []
         self.selected_index  = None
-        
-        # NOUVELLE MÉMOIRE DES CASES COCHÉES 
         self.cases_cochees = {cat: {opt: ctk.BooleanVar(value=False) for opt in opts} for cat, opts in CARACTERISTIQUES.items()}
         self.boutons_categorie = {}
         self.badges = {}
         self.categorie_active = None
-        
         self.mode            = ctk.IntVar(value=1)
         self.nb_images       = ctk.StringVar(value="6")
-
-        # Deux pages
         self.page0 = ctk.CTkFrame(root, fg_color="white")
         self.page1 = ctk.CTkFrame(root, fg_color=FOND_GENERAL)
         self.page2 = ctk.CTkFrame(root, fg_color=FOND_GENERAL)
-
         self.build_page0(self.page0)
         self.build_page1(self.page1)
         self.build_page2(self.page2)
-
-        self.page0.pack(fill="both", expand=True)
-        
-        # Initialiser avec la première catégorie
+        self.page0.pack(fill="both", expand=True)       
         self.choisir_categorie(list(CARACTERISTIQUES.keys())[0])
 
-        #PAGE 0 : page d'accueil 
+    # PAGE 0 : page d'accueil 
 
     def build_page0(self, parent):
         container = ctk.CTkFrame(parent, fg_color="white")
@@ -157,22 +148,20 @@ class PortraitRobotApp:
 
 
     #PAGE 1 : sélection des critères
+    
     def build_page1(self, parent):
-        # Top Header (Titre global)
         top_header = ctk.CTkFrame(parent, fg_color=FOND_GENERAL, height=60, corner_radius=0)
-        top_header.pack(fill="x", side="top")
-        
+        top_header.pack(fill="x", side="top")  
         ctk.CTkLabel(
             top_header, text="  🫆 Portraits Robot",
             font=("Segoe UI", 20, "bold"),
             text_color=TEXTE_PRINCIPAL
-        ).pack(side="left", padx=20, pady=15)
-        
-        # Corps principal séparé en 2 (Sidebar / Contenu)
+        ).pack(side="left", padx=20, pady=15)        
         corps = ctk.CTkFrame(parent, fg_color=FOND_GENERAL, corner_radius=0)
         corps.pack(fill="both", expand=True)
         
-        # BARRE LATÉRALE GAUCHE 
+        # Barre latérale gauche 
+    
         barre_laterale_ext = ctk.CTkFrame(corps, fg_color=BORDURE, width=232, corner_radius=0)
         barre_laterale_ext.pack(side="left", fill="y")
         barre_laterale_ext.pack_propagate(False)
@@ -213,7 +202,7 @@ class PortraitRobotApp:
             self.boutons_categorie[cat] = btn
             self.badges[cat] = badge
 
-        # ZONE DROITE
+        # Zone droite
         zone_droite = ctk.CTkFrame(corps, fg_color=FOND_GENERAL, corner_radius=0)
         zone_droite.pack(side="left", fill="both", expand=True)
         
@@ -234,20 +223,14 @@ class PortraitRobotApp:
             font=("Segoe UI", 12),
             text_color=TEXTE_SECONDAIRE
         )
-        self.sous_titre_label.pack(side="left", padx=(0, 20), pady=(20, 0))
-        
-        ctk.CTkFrame(zone_droite, fg_color=BORDURE, height=1, corner_radius=0).pack(fill="x")
-        
-        # Scrollable Frame pour les checkboxes
+        self.sous_titre_label.pack(side="left", padx=(0, 20), pady=(20, 0))  
+        ctk.CTkFrame(zone_droite, fg_color=BORDURE, height=1, corner_radius=0).pack(fill="x")    
         self.zone_options = ctk.CTkScrollableFrame(zone_droite, fg_color=FOND_GENERAL)
-        self.zone_options.pack(fill="both", expand=True, padx=20, pady=10)
-        
-        # Pied de page (Mode et Bouton Générer)
+        self.zone_options.pack(fill="both", expand=True, padx=20, pady=10)        
         pied_de_page = ctk.CTkFrame(zone_droite, fg_color=FOND_CONTENU, height=70, corner_radius=0)
         pied_de_page.pack(fill="x", side="bottom")
         pied_de_page.pack_propagate(False)
-        ctk.CTkFrame(pied_de_page, fg_color=BORDURE, height=1, corner_radius=0).pack(fill="x")
-        
+        ctk.CTkFrame(pied_de_page, fg_color=BORDURE, height=1, corner_radius=0).pack(fill="x")    
         mode_frame = ctk.CTkFrame(pied_de_page, fg_color="transparent")
         mode_frame.pack(side="left", padx=20, pady=15)
         
@@ -276,7 +259,7 @@ class PortraitRobotApp:
             font=("Segoe UI", 14, "bold"), height=40, corner_radius=6
         ).pack(side="right", padx=20, pady=15)
 
-    # LOGIQUE DES CATÉGORIES
+
     def choisir_categorie(self, cat):
         self.categorie_active = cat
         
@@ -323,6 +306,7 @@ class PortraitRobotApp:
             self.sous_titre_label.configure(text=", ".join(coches) if coches else "Aucune sélection")
 
     # PAGE 2 : affichage des portraits 
+        
     def build_page2(self, parent):
         top_bar = ctk.CTkFrame(parent, fg_color=FOND_CONTENU, height=60, corner_radius=0)
         top_bar.pack(fill="x", side="top")
@@ -356,8 +340,7 @@ class PortraitRobotApp:
 
         self.grid = ctk.CTkFrame(parent, fg_color=FOND_GENERAL)
         self.grid.pack(fill="both", expand=True, padx=20, pady=20)
-
-    # NAVIGATION 
+ 
     def go_to_page2(self):
         self.page1.pack_forget()
         self.page2.pack(fill="both", expand=True)
@@ -376,7 +359,6 @@ class PortraitRobotApp:
         self.page2.pack_forget()
         self.page1.pack(fill="both", expand=True)
 
-    # GRILLE DES PORTRAITS 
     def build_grid(self, n):
         self.portrait_labels.clear()
         for w in self.grid.winfo_children():
@@ -400,12 +382,11 @@ class PortraitRobotApp:
         for r in range(rows):
             self.grid.rowconfigure(r, weight=1)
 
-    # GÉNÉRATION 
+    # Génération 
+    
     def run(self, evolve=False):
         if evolve and self.selected_index is None:
             return
-
-        # Construction du dictionnaire avec la nouvelle logique des cases cochées
         choix = []
         for cat, opts in self.cases_cochees.items():
             for opt, var in opts.items():
@@ -452,7 +433,8 @@ class PortraitRobotApp:
             self.evolve_button.configure(state="normal")
             self.change_criteria_button.configure(state="normal")
 
-    # SÉLECTION D'UN PORTRAIT 
+    # Séléction d'un portrait
+    
     def select(self, idx):
         self.selected_index = idx
         for i, lbl in enumerate(self.portrait_labels):
