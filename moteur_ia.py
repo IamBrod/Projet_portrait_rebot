@@ -1,5 +1,7 @@
 import torch
+import os
 import random
+import urllib.request
 from torchvision.utils import save_image
 import torchvision.transforms as transforms
 from PIL import Image
@@ -8,35 +10,54 @@ from architecture_ia import ImprovedConvVAE
 
 class MoteurPortraitRobot:
     def __init__(self, chemin_poids, chemin_vecteurs, latent_dim=1024, device="cuda"):
-        """Initialise le moteur une seule fois au lancement de l'interface."""
+        """Initialise le moteur et télécharge les poids si nécessaire."""
         self.device = torch.device(device if torch.cuda.is_available() else "cpu")
         self.latent_dim = latent_dim
         
-        # 1. Chargement du modèle en RAM
+        # 1. Le lien direct le fichier des poids sur github
+        url_directe_poids = "https://github.com/IamBrod/Projet_portrait_rebot/releases/download/file/weight_ia.pth"
+        
+        # 2. Le moteur vérifie lui-même s'il a besoin de se télécharger
+        self._telecharger_poids_si_besoin(chemin_poids, url_directe_poids)
+        
+        # 3. Chargement du modèle en RAM (le fichier existe forcément à ce stade)
         print("[MOTEUR] Démarrage du réseau de neurones...")
         self.model = ImprovedConvVAE(latent_dim=self.latent_dim).to(self.device)
         self.model.load_state_dict(torch.load(chemin_poids, map_location=self.device))
         self.model.eval()
         
-        # 2. Chargement des vecteurs d'attributs
+        # 4. Chargement des vecteurs d'attributs
         self.vecteurs = torch.load(chemin_vecteurs, map_location=self.device)
         self.noms_attributs = list(self.vecteurs.keys())
         
-        # 3. Outils de transformation
+        # ... (le reste du __init__ avec self.transform_in, etc.) ...
         self.transform_in = transforms.Compose([
             transforms.Resize((128, 128)),
             transforms.CenterCrop(128),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
-        
-        # Pour renvoyer des images faciles à afficher dans l'interface
         self.transform_out = transforms.ToPILImage()
-        
-        # État actuel du suspect (l'ADN en cours)
         self.z_actuel = None 
         self.etat_attributs = {}
         print("[MOTEUR] Prêt à recevoir les commandes de l'interface !")
+
+    def _telecharger_poids_si_besoin(self, chemin_local, url_telechargement):
+        """Méthode interne (privée) au moteur pour s'auto-installer."""
+        if not os.path.exists(chemin_local):
+            print(f"\n[INSTALLATION] Le fichier {chemin_local} est introuvable.")
+            print("[INSTALLATION] Téléchargement en cours (environ 376 Mo), veuillez patienter...")
+            
+            # S'assurer que le dossier cible existe, sinon le créer
+            dossier = os.path.dirname(chemin_local)
+            if dossier:  # Évite une erreur si le fichier est à la racine
+                os.makedirs(dossier, exist_ok=True)
+            
+            # Téléchargement silencieux
+            urllib.request.urlretrieve(url_telechargement, chemin_local)
+            print("[INSTALLATION] Téléchargement terminé avec succès !\n")
+        else:
+            print("[SYSTÈME] Fichier de poids détecté.")
 
     def _tensor_to_pil(self, tensor):
         """Utilitaire interne pour convertir le tenseur PyTorch en image pour l'interface"""
@@ -244,7 +265,7 @@ if __name__ == "__main__":
     print("=== DÉMARRAGE DU CRASH TEST ===")
     
     # 1. Initialisation (Vérifiez les noms de vos fichiers !)
-    chemin_poids = "portraits_generes/200000.pth"
+    chemin_poids = "weight_ia.pth"
     chemin_vecteurs = "tous_les_vecteurs_attributs.pt"
     image_source = "045097.jpg"
 
