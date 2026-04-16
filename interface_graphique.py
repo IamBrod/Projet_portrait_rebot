@@ -2,6 +2,9 @@ import random
 import customtkinter as ctk
 from PIL import Image
 from customtkinter import CTkImage
+import moteur_ia
+import pandas as pd
+import os
 
 # COULEURS
 FOND_GENERAL     = "#F5F5F5"   # gris très clair
@@ -63,15 +66,50 @@ TRADUCTION = {
     "Necktie": "Wearing_Necktie", "Young": "Young",
 }
 
-def algo_genetique(caracteristiques: dict, n=6, parent_index=None):
-    """Génère n images placeholder (à remplacer par le vrai algo)."""
-    return [
-        Image.new("RGB", (300, 360), (
-            random.randint(80, 240),
-            random.randint(80, 200),
-            random.randint(60, 180)
-        )) for _ in range(n)
-    ]
+df = pd.read_csv("1000_attr.txt", sep=r"\s+")
+def algo_genetique(caracteristiques: dict, n=6, parent_index=None, moteur=None):
+
+    chemin_poids = "weight_ia.pth"
+    chemin_vecteurs = "tous_les_vecteurs_attributs.pt"
+
+    # Initialise le moteur une unique fois
+    if moteur is None:
+        moteur = moteur_ia.MoteurPortraitRobot(chemin_poids, chemin_vecteurs)
+
+    # Crée un individu de base
+    if parent_index is None:
+        # nouveau visage
+        image_base=select_image_base(caracteristiques, df)
+        img_base, msg = moteur.creer_premier_individu(image_base)
+    else:
+        # ⚠️ ici parent_index doit être un mutant choisi
+        moteur.definir_nouveau_suspect(parent_index)
+        img_base = parent_index["image"]
+
+    # Applique les critères
+    moteur.appliquer_mutations_choisies(caracteristiques)
+
+    # Génère les mutants
+    mutants, messages = moteur.creer_individus_mutants(
+        nb_mutants=n,
+        force_bruit=0.05
+    )
+
+    # Retourne uniquement les images
+    images = [m["image"] for m in mutants]
+
+    return images, mutants
+
+def select_image_base(dico:dict, df):
+    if dico["Male"]==1:
+        df_filtre = df[df["Male"] == 1]
+        element = df_filtre.sample()
+    else:
+        df_filtre = df[df["Male"]==-1]
+        element = df_filtre.sample()
+    chemin = os.path.join("1000_image", element.index[0])
+    return chemin
+
 
 class PortraitRobotApp:
     def __init__(self, root):
@@ -95,7 +133,10 @@ class PortraitRobotApp:
         self.build_page2(self.page2)
         self.page0.pack(fill="both", expand=True)       
         self.choisir_categorie(list(CARACTERISTIQUES.keys())[0])
-
+        self.dico = {}
+        self.moteur = moteur_ia.MoteurPortraitRobot("weight_ia.pth","tous_les_vecteurs_attributs.pt")
+        self.mutants = []
+        
     # PAGE 0 : page d'accueil 
 
     def build_page0(self, parent):
@@ -406,7 +447,7 @@ class PortraitRobotApp:
         self.change_criteria_button.configure(state="disabled")
         self.info_label.configure(text="Cliquez sur un portrait pour le sélectionner", text_color=TEXTE_SECONDAIRE)
 
-        images = algo_genetique(criteres, n, parent_index=self.selected_index if evolve else None)
+        images, self.mutants = algo_genetique(criteres,n,parent_index=self.mutants[self.selected_index] if evolve else None,moteur=self.moteur)
 
         if self.mode.get() == 1:
             self.build_grid(n)
