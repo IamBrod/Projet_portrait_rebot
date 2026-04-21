@@ -75,7 +75,7 @@ Le projet prend en charge **40 attributs faciaux** issus du dataset CelebA, que 
 
 Pour installer et lancer le projet sur votre machine, veuillez consulter le fichier dédié :
 
-➡️ **[INSTALLATION.md](./INSTALLATION.md)**
+**[INSTALLATION.md](./INSTALLATION.md)**
 
 ---
 
