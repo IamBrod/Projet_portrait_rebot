@@ -41,58 +41,33 @@ cd Projet_portrait_rebot
 
 Si vous ne disposez pas de Git, vous pouvez également télécharger le projet sous forme d'archive ZIP directement depuis la page GitHub du projet, puis extraire le dossier.
 
-### Étape 2 — Créer un environnement virtuel (recommandé)
+### Étape 2 — Créer un environnement virtuel 
 
 Il est fortement conseillé de créer un environnement virtuel (c'est-à-dire un espace Python isolé) pour éviter tout conflit entre les bibliothèques de ce projet et celles d'autres projets présents sur votre machine.
+Vous pourrez trouver 2 fichier .yml sur github. Ces fichiers permettent d'obtenir un environnement virtuel déjà préparé pour le projet.
 
-```bash
-python -m venv venv
-```
+- **Windows :**
+  ```bash
+  conda env create -f environment.yml
+  ```
+- **macOS / Linux :**
+  ```bash
+  conda env create -f environment_portable.yml
+  ```
 
 Puis activez-le selon votre système d'exploitation :
 
 - **Windows :**
   ```bash
-  venv\Scripts\activate
+  portrait_robot\Scripts\activate
   ```
 - **macOS / Linux :**
   ```bash
-  source venv/bin/activate
+  source portrait_robot/bin/activate
   ```
 
-Une fois activé, votre terminal affiche le nom de l'environnement entre parenthèses `(venv)`, ce qui indique que toutes les installations suivantes seront isolées dans cet espace.
+Une fois activé, votre terminal affiche le nom de l'environnement entre parenthèses `(portrait_robot)`, ce qui indique que toutes les installations sont isolées dans cet espace.
 
-### Étape 3 — Installer PyTorch
-
-PyTorch est la bibliothèque centrale du projet. Son installation dépend de votre configuration matérielle.
-
-**Avec GPU (CUDA 11.8) :**
-```bash
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-```
-
-**Sans GPU (CPU uniquement) :**
-```bash
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-```
-
-Pour connaître la version de CUDA compatible avec votre carte graphique, vous pouvez consulter le configurateur officiel de PyTorch : [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/).
-
-### Étape 4 — Installer les autres dépendances
-
-Les bibliothèques restantes s'installent en une seule commande :
-
-```bash
-pip install customtkinter Pillow pandas
-```
-
-Voici le rôle de chacune :
-
-- **customtkinter** — bibliothèque d'interface graphique moderne basée sur Tkinter, qui permet d'afficher les boutons, les sélecteurs et les images dans l'application.
-- **Pillow (PIL)** — bibliothèque de manipulation d'images, utilisée pour charger, transformer et afficher les portraits générés.
-- **pandas** — bibliothèque d'analyse de données, utilisée ici pour lire le fichier d'annotations `1000_attr.txt` qui répertorie les 40 attributs de chaque image de référence.
-
----
 
 ## Téléchargement automatique des poids du modèle
 
