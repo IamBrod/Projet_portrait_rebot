@@ -41,16 +41,36 @@ cd Projet_portrait_rebot
 
 Si vous ne disposez pas de Git, vous pouvez également télécharger le projet sous forme d'archive ZIP directement depuis la page GitHub du projet, puis extraire le dossier.
 
-### Étape 2 — Créer un environnement virtuel 
+### Étape 2 — Lancer le programme
 
-Il est fortement conseillé de créer un environnement virtuel (c'est-à-dire un espace Python isolé) pour éviter tout conflit entre les bibliothèques de ce projet et celles d'autres projets présents sur votre machine.
+Nous avons deux fichiers qui permettent de se placer dans un environnement virtuel puis de lancer automatiquement le code du projet.
+En fonction de l'installation OS de votre machine le fichier est différent.
+
+- **Windows :**
+Le fichier qui nous intéresse est run.bat, il faut juste double cliquer dessus ou l'éxecuter à partir d'un terminal de commande bash
+  ```bash
+  run.bat
+  ```
+- **Linux :**
+Il faut par contre faire une étape altenative dans ce cas là. Le programme utilise conda mais il nous faut aussi utiliser mamba.
+Veuillez donc installer mamba avec la commande :
+  ```bash
+  conda install -n base -c conda-forge mamba
+  ```
+  Puis il faut lancer le programme.
+  ```bash
+  run.sh
+  ```
+### Étape alternative 1 — Créer un environnement virtuel 
+
+Si pour une raison particulière l'étape précedent n'a pas fonctionné, nous vous invitions à créer un environnement virtuel (c'est-à-dire un espace Python isolé) pour éviter tout conflit entre les bibliothèques de ce projet et celles d'autres projets présents sur votre machine.
 Vous pourrez trouver 2 fichier .yml sur github. Ces fichiers permettent d'obtenir un environnement virtuel déjà préparé pour le projet.
 
 - **Windows :**
   ```bash
   conda env create -f environment.yml
   ```
-- **macOS / Linux :**
+- **Linux :**
   ```bash
   conda env create -f environment_portable.yml
   ```
@@ -68,6 +88,14 @@ Puis activez-le selon votre système d'exploitation :
 
 Une fois activé, votre terminal affiche le nom de l'environnement entre parenthèses `(portrait_robot)`, ce qui indique que toutes les installations sont isolées dans cet espace.
 
+### Étape alternative 2 — Lancer le programme
+
+Enfin, une fois toutes les dépendances installées, lancez l'interface graphique avec la commande suivante, depuis le dossier racine du projet :
+
+```bash
+python interface_graphique.py
+```
+
 
 ## Téléchargement automatique des poids du modèle
 
@@ -78,12 +106,6 @@ Ce téléchargement est entièrement automatisé. Au **premier lancement** de l'
 ---
 
 ## Lancement de l'application
-
-Enfin, une fois toutes les dépendances installées, lancez l'interface graphique avec la commande suivante, depuis le dossier racine du projet :
-
-```bash
-python interface_graphique.py
-```
 
 L'application s'ouvre alors et affiche l'interface de génération de portraits robots. Vous pouvez dès lors :
 
