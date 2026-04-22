@@ -55,7 +55,7 @@ else
     echo "--- PREMIER LANCEMENT ---"
     echo "Création de l'environnement '$ENV_NAME'..."
     echo "Cela peut prendre quelques minutes, veuillez patienter."
-    conda env create -f environment.yml
+    mamda env create -f environment.yml
     
     if [ $? -ne 0 ]; then
         echo "Erreur lors de la création de l'environnement."
