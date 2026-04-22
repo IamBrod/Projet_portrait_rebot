@@ -15,7 +15,7 @@ class MoteurPortraitRobot:
         self.latent_dim = latent_dim
         
         # 1. Le lien direct le fichier des poids sur github
-        url_directe_poids = "https://github.com/IamBrod/Projet_portrait_rebot/releases/download/file/weight_ia.pth"
+        url_directe_poids = "https://github.com/IamBrod/Projet_portrait_rebot/releases/download/new_file/vae_celeba_weights.pth"
         
         # 2. Le moteur vérifie lui-même s'il a besoin de se télécharger
         self._telecharger_poids_si_besoin(chemin_poids, url_directe_poids)
