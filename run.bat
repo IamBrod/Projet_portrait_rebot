@@ -1,7 +1,7 @@
 @echo off
 
 set ENV_NAME=portrait_robot
-set SCRIPT_NAME=interface_graphique_final.py
+set SCRIPT_NAME=interface_graphique.py
 
 echo Recherche de Conda sur votre ordinateur...
 
