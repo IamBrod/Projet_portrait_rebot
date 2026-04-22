@@ -13,7 +13,7 @@ if conda info --envs | grep -q "^$ENV_NAME "; then
 else
     echo "Premier lancement détecté ! Création de l'environnement '$ENV_NAME'..."
     echo "Cela peut prendre quelques minutes."
-    conda env create -f environment.yml
+    conda env create -f environment_portable.yml
     if [ $? -ne 0 ]; then
         echo "Erreur lors de la création de l'environnement."
         read -p "Appuyez sur une touche pour quitter..."
