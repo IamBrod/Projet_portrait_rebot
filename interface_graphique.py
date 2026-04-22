@@ -5,6 +5,12 @@ from customtkinter import CTkImage
 import moteur_ia
 import pandas as pd
 import os
+import sys
+
+def resource_path(relative_path):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 # COULEURS
 FOND_GENERAL     = "#F5F5F5"   # gris très clair
@@ -20,7 +26,6 @@ ROUGE_BOUTON     = "#4169E1"   # bleu roi pour les boutons principaux
 
 
 #DONNÉES
-
 CARACTERISTIQUES = {
     "Hair Color 💇":  ['Brown', 'Blond', 'Black', 'Gray'],
     "Hair Type ✂️":   ['Wavy', 'Straight', 'Receding Hairline', 'Bangs', 'Bald'],
@@ -29,8 +34,7 @@ CARACTERISTIQUES = {
     "Sexe 🚻":        ['Male', 'Female'],
     "Mouth 👄":       ['Smiling', 'Mouth Slightly Open', 'Big Lips'],
     "Eyes 👁️":        ['Narrow Eyes', 'Bags Under Eyes', 'Bushy Eyebrows', 'Arched Eyebrows'],
-    "Face 👤":        ['Oval Face', 'Pale Skin', 'Heavy Makeup', 'Rosy Cheeks',
-                    'High Cheekbones', 'Double Chin', 'Chubby'],
+    "Face 👤":        ['Oval Face', 'Pale Skin', 'Heavy Makeup', 'Rosy Cheeks', 'High Cheekbones', 'Double Chin', 'Chubby'],
     "Nose 👃":        ['Big Nose', 'Pointy Nose'],
     "Age 🕺🏼":         ['Young', 'Aged'],
     "Image 📷":       ['Blurry', 'Clear']
@@ -66,17 +70,17 @@ TRADUCTION = {
     "Necktie": "Wearing_Necktie", "Young": "Young",
 }
 
-df = pd.read_csv("1000_attr.txt", sep=r"\s+")
+df = pd.read_csv(resource_path("1000_attr.txt"), sep=r"\s+")
 def algo_genetique(caracteristiques: dict, n=6, parent_index=None, moteur=None):
 
-    chemin_poids = "weight_ia.pth"
-    chemin_vecteurs = "tous_les_vecteurs_attributs.pt"
+    chemin_poids = resource_path("vae_celeba_weights.pth")
+    chemin_vecteurs = resource_path("tous_les_vecteurs_attributs_sans_segmentation.pt")
 
-    # Initialise le moteur une unique fois
+    # 1. Initialiser moteur UNE FOIS
     if moteur is None:
         moteur = moteur_ia.MoteurPortraitRobot(chemin_poids, chemin_vecteurs)
 
-    # Crée un individu de base
+    # 2. Créer individu de base
     if parent_index is None:
         # nouveau visage
         image_base=select_image_base(caracteristiques, df)
@@ -86,16 +90,16 @@ def algo_genetique(caracteristiques: dict, n=6, parent_index=None, moteur=None):
         moteur.definir_nouveau_suspect(parent_index)
         img_base = parent_index["image"]
 
-    # Applique les critères
+    # 3. Appliquer les critères
     moteur.appliquer_mutations_choisies(caracteristiques)
 
-    # Génère les mutants
+    # 4. Générer mutants
     mutants, messages = moteur.creer_individus_mutants(
         nb_mutants=n,
-        force_bruit=0.05
+        force_bruit=0.3
     )
 
-    # Retourne uniquement les images
+    # 5. Retourner uniquement les images
     images = [m["image"] for m in mutants]
 
     return images, mutants
@@ -107,11 +111,26 @@ def select_image_base(dico:dict, df):
     else:
         df_filtre = df[df["Male"]==-1]
         element = df_filtre.sample()
-    chemin = os.path.join("1000_image", element.index[0])
+    chemin = os.path.join(resource_path("1000_image"), element.index[0])
     return chemin
 
-
 class PortraitRobotApp:
+    def get_state(self):
+        choix = []
+        for cat, opts in self.cases_cochees.items():
+            for opt, var in opts.items(): 
+                if var.get():
+                    choix.append(opt)
+        coches = [TRADUCTION[opt] for opt in choix if opt in TRADUCTION]
+        criteres = {cle: (1 if cle in coches else 0) for cle in LISTE_REFERENCE}
+        if "Female" in choix: criteres["Male"]   = -1
+        if "Aged"   in choix: criteres["Young"]  = -1
+        if "Clear"  in choix: criteres["Blurry"] = -1
+
+        n = int(self.nb_images.get()) if self.mode.get() == 1 else 1
+
+        return {'criteres': criteres, 'n': n,'selected_index': self.selected_index,'photos': self.photos, 'recherche_terminee': self.recherche_terminee, 'image_finale': self.image_finale}
+    
     def __init__(self, root):
         self.root = root
         self.root.title("Portrait Robot")
@@ -123,39 +142,45 @@ class PortraitRobotApp:
         self.boutons_categorie = {}
         self.badges = {}
         self.categorie_active = None
-        self.mode            = ctk.IntVar(value=1)
-        self.nb_images       = ctk.StringVar(value="6")
+        self.mode = ctk.IntVar(value=1)
+        self.nb_images = ctk.StringVar(value="6")
+        self.recherche_terminee = False
+        self.image_finale = None
         self.page0 = ctk.CTkFrame(root, fg_color="white")
         self.page1 = ctk.CTkFrame(root, fg_color=FOND_GENERAL)
         self.page2 = ctk.CTkFrame(root, fg_color=FOND_GENERAL)
         self.build_page0(self.page0)
         self.build_page1(self.page1)
         self.build_page2(self.page2)
-        self.page0.pack(fill="both", expand=True)       
-        self.choisir_categorie(list(CARACTERISTIQUES.keys())[0])
         self.dico = {}
-        self.moteur = moteur_ia.MoteurPortraitRobot("weight_ia.pth","tous_les_vecteurs_attributs.pt")
+        self.moteur = moteur_ia.MoteurPortraitRobot("vae_celeba_weights.pth","tous_les_vecteurs_attributs_sans_segmentation.pt",latent_dim = 512)
         self.mutants = []
+
+        self.page0.pack(fill="both", expand=True)
         
-    # PAGE 0 : page d'accueil 
+        # Initialiser avec la première catégorie
+        self.choisir_categorie(list(CARACTERISTIQUES.keys())[0])
+
+        #PAGE 0 : page d'accueil 
 
     def build_page0(self, parent):
         container = ctk.CTkFrame(parent, fg_color="white")
-        container.pack(expand=True)     
-        image = Image.open("photo.jpg")
-        photo = CTkImage(light_image=image, size=(120, 120))
-
-        # Afficher l'image
-        ctk.CTkLabel(
+        container.pack(expand=True)
+    
+        image = Image.open(resource_path("photo.jpg"))
+        self.photo_accueil = CTkImage(light_image=image, size=(120, 120))
+    
+        self.label_photo_accueil = ctk.CTkLabel(
             container,
-            image=photo,
+            image=self.photo_accueil,
             text=""
-        ).pack(pady=(40, 10))
+        )
+        self.label_photo_accueil.pack(pady=(40, 10))
 
         # Titre
         ctk.CTkLabel(
             container,
-            text=" Portarait Robot  ",
+            text=" Portrait Robot  ",
             font=("Segoe UI", 40, "bold"),
             text_color=TEXTE_PRINCIPAL
         ).pack(pady=(80, 20))
@@ -189,20 +214,22 @@ class PortraitRobotApp:
 
 
     #PAGE 1 : sélection des critères
-    
     def build_page1(self, parent):
+        # Top Header (Titre global)
         top_header = ctk.CTkFrame(parent, fg_color=FOND_GENERAL, height=60, corner_radius=0)
-        top_header.pack(fill="x", side="top")  
+        top_header.pack(fill="x", side="top")
+        
         ctk.CTkLabel(
             top_header, text="  🫆 Portraits Robot",
             font=("Segoe UI", 20, "bold"),
             text_color=TEXTE_PRINCIPAL
-        ).pack(side="left", padx=20, pady=15)        
+        ).pack(side="left", padx=20, pady=15)
+        
+        # Corps principal séparé en 2 (Sidebar / Contenu)
         corps = ctk.CTkFrame(parent, fg_color=FOND_GENERAL, corner_radius=0)
         corps.pack(fill="both", expand=True)
         
-        # Barre latérale gauche 
-    
+        # BARRE LATÉRALE GAUCHE 
         barre_laterale_ext = ctk.CTkFrame(corps, fg_color=BORDURE, width=232, corner_radius=0)
         barre_laterale_ext.pack(side="left", fill="y")
         barre_laterale_ext.pack_propagate(False)
@@ -243,7 +270,7 @@ class PortraitRobotApp:
             self.boutons_categorie[cat] = btn
             self.badges[cat] = badge
 
-        # Zone droite
+        # ZONE DROITE
         zone_droite = ctk.CTkFrame(corps, fg_color=FOND_GENERAL, corner_radius=0)
         zone_droite.pack(side="left", fill="both", expand=True)
         
@@ -264,14 +291,20 @@ class PortraitRobotApp:
             font=("Segoe UI", 12),
             text_color=TEXTE_SECONDAIRE
         )
-        self.sous_titre_label.pack(side="left", padx=(0, 20), pady=(20, 0))  
-        ctk.CTkFrame(zone_droite, fg_color=BORDURE, height=1, corner_radius=0).pack(fill="x")    
+        self.sous_titre_label.pack(side="left", padx=(0, 20), pady=(20, 0))
+        
+        ctk.CTkFrame(zone_droite, fg_color=BORDURE, height=1, corner_radius=0).pack(fill="x")
+        
+        # Scrollable Frame pour les checkboxes
         self.zone_options = ctk.CTkScrollableFrame(zone_droite, fg_color=FOND_GENERAL)
-        self.zone_options.pack(fill="both", expand=True, padx=20, pady=10)        
+        self.zone_options.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        # Pied de page (Mode et Bouton Générer)
         pied_de_page = ctk.CTkFrame(zone_droite, fg_color=FOND_CONTENU, height=70, corner_radius=0)
         pied_de_page.pack(fill="x", side="bottom")
         pied_de_page.pack_propagate(False)
-        ctk.CTkFrame(pied_de_page, fg_color=BORDURE, height=1, corner_radius=0).pack(fill="x")    
+        ctk.CTkFrame(pied_de_page, fg_color=BORDURE, height=1, corner_radius=0).pack(fill="x")
+        
         mode_frame = ctk.CTkFrame(pied_de_page, fg_color="transparent")
         mode_frame.pack(side="left", padx=20, pady=15)
         
@@ -300,7 +333,7 @@ class PortraitRobotApp:
             font=("Segoe UI", 14, "bold"), height=40, corner_radius=6
         ).pack(side="right", padx=20, pady=15)
 
-
+    # LOGIQUE DES CATÉGORIES
     def choisir_categorie(self, cat):
         self.categorie_active = cat
         
@@ -347,7 +380,6 @@ class PortraitRobotApp:
             self.sous_titre_label.configure(text=", ".join(coches) if coches else "Aucune sélection")
 
     # PAGE 2 : affichage des portraits 
-        
     def build_page2(self, parent):
         top_bar = ctk.CTkFrame(parent, fg_color=FOND_CONTENU, height=60, corner_radius=0)
         top_bar.pack(fill="x", side="top")
@@ -367,25 +399,52 @@ class PortraitRobotApp:
 
         self.evolve_button = ctk.CTkButton(
             top_bar, text="Évoluer le portrait", command=lambda: self.run(evolve=True),
-            fg_color=COULEUR_ACCENT, hover_color="#2952c4", text_color="white",
-            font=("Segoe UI", 12, "bold"), state="disabled"
+            fg_color=FOND_GENERAL, text_color=TEXTE_PRINCIPAL,
+            font=("Segoe UI", 12), state="disabled"
         )
-        self.evolve_button.pack(side="right", padx=8, pady=12)
+        self.evolve_button.pack(side="right", padx=4, pady=12)
 
         self.change_criteria_button = ctk.CTkButton(
             top_bar, text="Changer un critère", command=self.change_criteria,
-            fg_color=FOND_GENERAL, hover_color=SURVOL, text_color=TEXTE_PRINCIPAL,
-            font=("Segoe UI", 12), border_width=1, border_color=BORDURE, state="disabled"
+            fg_color=FOND_GENERAL, text_color=TEXTE_PRINCIPAL,
+            font=("Segoe UI", 12), state="disabled"
         )
-        self.change_criteria_button.pack(side="right", padx=4, pady=12)
+        self.change_criteria_button.pack(side="right", padx=0, pady=12)
+
+        self.final_button = ctk.CTkButton(
+            top_bar, text="Cette image me convient", command=self.valider_choix_final,
+            fg_color=FOND_GENERAL, text_color=TEXTE_PRINCIPAL,
+            font=("Segoe UI", 12), state="disabled"
+        )
+        self.final_button.pack(side="right", padx=8, pady=12)
 
         self.grid = ctk.CTkFrame(parent, fg_color=FOND_GENERAL)
         self.grid.pack(fill="both", expand=True, padx=20, pady=20)
- 
-    def go_to_page2(self):
-        self.page1.pack_forget()
-        self.page2.pack(fill="both", expand=True)
-        self.run(evolve=self.selected_index is not None)
+
+
+    def build_page3(self, parent):
+        top_bar = ctk.CTkFrame(parent, fg_color=FOND_CONTENU, height=60, corner_radius=0)
+        top_bar.pack(fill="x", side="top")
+        ctk.CTkFrame(parent, fg_color=BORDURE, height=1, corner_radius=0).pack(fill="x")
+        ctk.CTkButton(
+            top_bar, text="← Retour", command=self.go_to_page2, fg_color=FOND_GENERAL,
+            hover_color=SURVOL, text_color=TEXTE_PRINCIPAL, font=("Segoe UI", 12),
+            width=100, border_width=1, border_color=BORDURE
+        ).pack(side="left", padx=20, pady=12)
+        self.info_label = ctk.CTkLabel(
+            top_bar, text="Voici votre portrait final !",
+            text_color=TEXTE_SECONDAIRE, font=("Segoe UI", 12)
+        )        
+        self.info_label.pack(side="left", expand=True, pady=12)
+        self.final_button = ctk.CTkButton(
+            top_bar, text="Recommencer", command=self.go_to_page1,
+            fg_color=FOND_GENERAL, text_color=TEXTE_PRINCIPAL,
+            font=("Segoe UI", 12)
+        )
+        self.final_button.pack(side="right", padx=8, pady=12)
+
+
+    # NAVIGATION 
 
     def go_to_page1(self):
         self.selected_index = None
@@ -395,11 +454,37 @@ class PortraitRobotApp:
         self.page2.pack_forget()
         self.page1.pack(fill="both", expand=True)
 
+    def go_to_page2(self):
+        self.page1.pack_forget()
+        self.page2.pack(fill="both", expand=True)
+        self.run(evolve=self.selected_index is not None)
+        
+    def go_to_page3(self):
+        self.page2.pack_forget()
+        self.page1.pack_forget()
+        self.page0.pack_forget()
+        self.build_page3(self.page3)
+
     def change_criteria(self):
         self.info_label.configure(text="Modifiez vos critères puis cliquez sur Générer.", text_color=COULEUR_ACCENT)
         self.page2.pack_forget()
         self.page1.pack(fill="both", expand=True)
+    
+    def valider_choix_final(self):
+        self.info_label.configure(
+            text="Merci d'avoir utilisé notre Portrait Robot !", 
+            text_color=COULEUR_ACCENT, 
+            font=("Segoe UI", 18, "bold")
+        )
+        self.evolve_button.configure(state="disabled")
+        self.change_criteria_button.configure(state="disabled")
+        self.final_button.configure(state="disabled")
 
+        if self.selected_index is not None:
+            self.image_finale = self.photos[self.selected_index]
+        self.recherche_terminee = True
+
+    # GRILLE DES PORTRAITS 
     def build_grid(self, n):
         self.portrait_labels.clear()
         for w in self.grid.winfo_children():
@@ -423,11 +508,12 @@ class PortraitRobotApp:
         for r in range(rows):
             self.grid.rowconfigure(r, weight=1)
 
-    # Génération 
-    
+    # GÉNÉRATION 
     def run(self, evolve=False):
         if evolve and self.selected_index is None:
             return
+
+        # Construction du dictionnaire avec la nouvelle logique des cases cochées
         choix = []
         for cat, opts in self.cases_cochees.items():
             for opt, var in opts.items():
@@ -446,6 +532,7 @@ class PortraitRobotApp:
         self.evolve_button.configure(state="disabled")
         self.change_criteria_button.configure(state="disabled")
         self.info_label.configure(text="Cliquez sur un portrait pour le sélectionner", text_color=TEXTE_SECONDAIRE)
+        self.final_button.configure(state="disabled")
 
         images, self.mutants = algo_genetique(criteres,n,parent_index=self.mutants[self.selected_index] if evolve else None,moteur=self.moteur)
 
@@ -473,9 +560,9 @@ class PortraitRobotApp:
             self.info_label.configure(text="Portrait généré. Vous pouvez l'évoluer.", text_color=TEXTE_PRINCIPAL)
             self.evolve_button.configure(state="normal")
             self.change_criteria_button.configure(state="normal")
+            self.final_button.configure(state="normal")
 
-    # Séléction d'un portrait
-    
+    # SÉLECTION D'UN PORTRAIT 
     def select(self, idx):
         self.selected_index = idx
         for i, lbl in enumerate(self.portrait_labels):
@@ -486,10 +573,11 @@ class PortraitRobotApp:
 
         self.info_label.configure(
             text=f"Portrait {idx + 1} sélectionné — cliquez sur \"Évoluer\" pour de nouvelles variantes.",
-            text_color=TEXTE_PRINCIPAL
+            text_color=TEXTE_PRINCIPAL, font= ("Segoe UI", 14, "bold")
         )
         self.evolve_button.configure(state="normal")
         self.change_criteria_button.configure(state="normal")
+        self.final_button.configure(state="normal")
 
 if __name__ == "__main__":
     ctk.set_appearance_mode("light")   
