@@ -8,4 +8,6 @@ dependencies:
   - pytorch
   - pyinstaller
   - pandas
+- pip:
+  - customtkinter==5.2.2
 prefix: C:\Users\plber\anaconda3\envs\portrait_robot
