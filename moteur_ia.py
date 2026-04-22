@@ -105,7 +105,8 @@ class MoteurPortraitRobot:
                 recette = []
                 
                 # 1. Attributs aléatoires
-                nb_modifs = random.randint(1, 3)
+                nb_modifs = random.randint(0, 2)
+                #nb_modifs = 0
                 attributs_choisis = random.sample(self.noms_attributs, nb_modifs)
                 
                 for attr in attributs_choisis:
@@ -128,8 +129,9 @@ class MoteurPortraitRobot:
                         z_mutant += force_autorisee * self.vecteurs[attr].to(self.device)
                         recette.append(f"{attr} ({force_autorisee:+.1f} -> Total: {total_bloque:+.1f})")
                     
-                # 2. Bruit pur aléatoire
-                z_mutant += torch.randn(1, self.latent_dim, device=self.device) * force_bruit
+                if random.random()>0.6:
+                    # 2. Bruit pur aléatoire
+                    z_mutant += torch.randn(1, self.latent_dim, device=self.device) * force_bruit
                 
                 # Décodage
                 img_mutant = self.model.decode(z_mutant)
@@ -157,6 +159,7 @@ class MoteurPortraitRobot:
         Appelé quand l'utilisateur bouge les curseurs dans l'interface.
         dictionnaire_curseurs = {"Smiling": 1.5, "Eyeglasses": 2.0}
         """
+        
         if self.z_actuel is None:
             return None, "Erreur : Aucun individu en cours."
 

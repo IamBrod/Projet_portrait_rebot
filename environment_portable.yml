@@ -1,0 +1,11 @@
+name: portrait_robot
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - torchvision
+  - torchaudio
+  - pytorch
+  - pyinstaller
+  - pandas
+prefix: C:\Users\plber\anaconda3\envs\portrait_robot
