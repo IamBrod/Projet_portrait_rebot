@@ -1,98 +1,72 @@
-name: portrait_robot
-channels:
-  - defaults
-dependencies:
-  - altgraph=0.17.4
-  - aom=3.12.1
-  - blas=1.0
-  - bottleneck=1.4.2
-  - bzip2=1.0.8
-  - ca-certificates=2026.3.19
-  - cairo=1.18.4
-  - dav1d=1.2.1
-  - expat=2.7.5
-  - filelock=3.20.3
-  - fontconfig=2.15.0
-  - freeglut=3.8.0
-  - freetype=2.14.1
-  - fribidi=1.0.16
-  - fsspec=2026.2.0
-  - giflib=5.2.2
-  - gmp=6.3.0
-  - gmpy2=2.2.2
-  - graphite2=1.3.14
-  - harfbuzz=12.3.0
-  - icu=73.1
-  - importlib-metadata=8.7.1
-  - intel-openmp=2025.0.0
-  - jinja2=3.1.6
-  - jpeg=9f
-  - lcms2=2.17
-  - lerc=4.0.0
-  - libabseil=20250814.1
-  - libavif=1.3.0
-  - libdeflate=1.22
-  - libexpat=2.7.5
-  - libffi=3.4.4
-  - libglib=2.86.3
-  - libhwloc=2.12.1
-  - libiconv=1.18
-  - libopenjpeg=2.5.4
-  - libpng=1.6.56
-  - libprotobuf=6.33.0
-  - libtiff=4.7.1
-  - libtorch=2.7.0
-  - libuv=1.52.0
-  - libwebp-base=1.6.0
-  - libxml2=2.13.9
-  - libzlib=1.3.1
-  - lz4-c=1.9.4
-  - markupsafe=3.0.2
-  - mkl=2025.0.0
-  - mkl-service=2.5.2
-  - mkl_fft=2.1.1
-  - mkl_random=1.3.0
-  - mpc=1.3.1
-  - mpfr=4.2.1
-  - mpmath=1.3.0
-  - networkx=3.4.2
-  - numexpr=2.14.1
-  - numpy=2.2.5
-  - numpy-base=2.2.5
-  - openssl=3.5.6
-  - opentelemetry-api=1.38.0
-  - packaging=25.0
-  - pandas=2.3.3
-  - pcre2=10.46
-  - pefile=2023.2.7
-  - pillow=12.1.1
-  - pip=26.0.1
-  - pixman=0.46.4
-  - pyinstaller=6.12.0
-  - pyinstaller-hooks-contrib=2025.1
-  - python=3.10.20
-  - python-dateutil=2.9.0post0
-  - python-tzdata=2025.3
-  - pytorch=2.7.0
-  - pytz=2026.1.post1
-  - setuptools=80.10.2
-  - six=1.17.0
-  - sleef=3.5.1
-  - sqlite=3.51.2
-  - sympy=1.14.0
-  - tbb=2022.3.0
-  - tbb-devel=2022.3.0
-  - tk=8.6.15
-  - torchaudio=2.7.0
-  - torchvision=0.22.1
-  - typing-extensions=4.15.0
-  - typing_extensions=4.15.0
-  - tzdata=2026a
-  - wheel=0.46.3
-  - xz=5.8.2
-  - zipp=3.23.0
-  - zlib=1.3.1
-  - zstd=1.5.7
-  - pip:
-    - customtkinter==5.2.2
-    - darkdetect==0.8.0
+#!/bin/bash
+
+ENV_NAME="portrait_robot"
+SCRIPT_NAME="interface_graphique.py"
+
+echo "Recherche de Conda sur votre système..."
+
+# Liste des chemins d'installation par défaut de Conda sur Mac/Linux
+CONDA_PATHS=(
+    "$HOME/miniconda3/etc/profile.d/conda.sh"
+    "$HOME/anaconda3/etc/profile.d/conda.sh"
+    "$HOME/opt/miniconda3/etc/profile.d/conda.sh"
+    "$HOME/opt/anaconda3/etc/profile.d/conda.sh"
+    "/opt/miniconda3/etc/profile.d/conda.sh"
+    "/opt/anaconda3/etc/profile.d/conda.sh"
+    "/usr/local/miniconda3/etc/profile.d/conda.sh"
+    "/usr/local/anaconda3/etc/profile.d/conda.sh"
+)
+
+CONDA_FOUND=false
+
+# On parcourt les dossiers pour trouver le script d'activation
+for path in "${CONDA_PATHS[@]}"; do
+    if [ -f "$path" ]; then
+        echo "Conda trouvé : $path"
+        source "$path"
+        CONDA_FOUND=true
+        break
+    fi
+done
+
+# Plan B : Si on n'a pas trouvé dans les dossiers par défaut, mais que la commande conda marche quand même
+if [ "$CONDA_FOUND" = false ] && command -v conda &> /dev/null; then
+    echo "Conda trouvé dans le PATH système."
+    CONDA_BASE=$(conda info --base)
+    source "$CONDA_BASE/etc/profile.d/conda.sh"
+    CONDA_FOUND=true
+fi
+
+# Si on n'a vraiment rien trouvé
+if [ "$CONDA_FOUND" = false ]; then
+    echo "ERREUR : Impossible de trouver Anaconda ou Miniconda sur votre système."
+    echo "Veuillez vérifier votre installation."
+    read -p "Appuyez sur Entrée pour quitter..."
+    exit 1
+fi
+
+echo "Vérification de l'environnement $ENV_NAME..."
+
+# Vérifie si l'environnement existe
+if conda info --envs | grep -q "^$ENV_NAME "; then
+    echo "L'environnement '$ENV_NAME' est déjà prêt."
+else
+    echo ""
+    echo "--- PREMIER LANCEMENT ---"
+    echo "Création de l'environnement '$ENV_NAME'..."
+    echo "Cela peut prendre quelques minutes, veuillez patienter."
+    conda env create -f enviro_test.yml
+    
+    if [ $? -ne 0 ]; then
+        echo "Erreur lors de la création de l'environnement."
+        read -p "Appuyez sur Entrée pour quitter..."
+        exit 1
+    fi
+fi
+
+echo ""
+echo "Lancement de l'application..."
+conda activate "$ENV_NAME"
+python "$SCRIPT_NAME"
+
+read -p "Appuyez sur Entrée pour quitter..."
