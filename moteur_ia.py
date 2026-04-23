@@ -169,7 +169,7 @@ class MoteurPortraitRobot:
             
             for attribut, force in dictionnaire_curseurs.items():
                 if force != 0.0 and attribut in self.vecteurs:
-                    z_modifie += force * self.vecteurs[attribut].to(self.device)
+                    z_modifie += 1.5 * force * self.vecteurs[attribut].to(self.device)
                     modifs_faites.append(f"{attribut}({force})")
             
             img_resultat = self.model.decode(z_modifie)
