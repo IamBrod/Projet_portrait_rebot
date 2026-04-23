@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ENV_NAME="portrait_robot"
-SCRIPT_NAME="interface_graphique.py"
+SCRIPT_NAME="interface_graphique_linux.py"
 
 echo "Recherche de Conda sur votre système..."
 
